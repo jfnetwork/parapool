@@ -1,0 +1,15 @@
+{
+    "type": "library",
+    "name": "jfnetwork/parapool",
+    "license": "MIT",
+    "description": "A library for parallel execution",
+    "require": {
+        "php": "^7.0",
+        "psr/log": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jfnetwork\\Parapool\\": "src/"
+        }
+    }
+}
