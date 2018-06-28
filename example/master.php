@@ -5,7 +5,7 @@ use Psr\Log\AbstractLogger;
 
 require __DIR__.'/../vendor/autoload.php';
 
-$pool = new \Jfnetwork\Parapool\Pool(__DIR__.'/slave.php', new class extends AbstractLogger
+$pool = new \Jfnetwork\Parapool\Pool(__DIR__.'/slave.php {workerId}', new class extends AbstractLogger
 {
     public function log($level, $message, array $context = [])
     {

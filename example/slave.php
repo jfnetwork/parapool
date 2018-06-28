@@ -34,5 +34,5 @@ $testCallable = new class implements \Jfnetwork\Parapool\SlaveCallableInterface
 
 };
 
-$slave = new \Jfnetwork\Parapool\Slave($argv[1], $testCallable);
+$slave = new \Jfnetwork\Parapool\Slave((int) $argv[1], $testCallable);
 $slave->loop();
