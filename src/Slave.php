@@ -83,7 +83,7 @@ class Slave
             if (!$output) {
                 throw new \UnexpectedValueException('JSON returned nothing');
             }
-            echo $output;
+            echo "$output\n";
         }
     }
 

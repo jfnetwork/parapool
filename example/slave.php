@@ -5,10 +5,9 @@ use Psr\Log\LoggerInterface;
 
 require __DIR__.'/../vendor/autoload.php';
 
-$testCallable = new class implements \Jfnetwork\Parapool\SlaveCallableInterface
-{
+$testCallable = new class() implements \Jfnetwork\Parapool\SlaveCallableInterface {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getName(): string
     {
@@ -16,7 +15,7 @@ $testCallable = new class implements \Jfnetwork\Parapool\SlaveCallableInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function execute(LoggerInterface $logger, array $args)
     {
@@ -31,7 +30,6 @@ $testCallable = new class implements \Jfnetwork\Parapool\SlaveCallableInterface
 
         return $result;
     }
-
 };
 
 $slave = new \Jfnetwork\Parapool\Slave((int) $argv[1], $testCallable);

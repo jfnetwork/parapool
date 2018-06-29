@@ -5,8 +5,10 @@ use Psr\Log\AbstractLogger;
 
 require __DIR__.'/../vendor/autoload.php';
 
-$pool = new \Jfnetwork\Parapool\Pool(__DIR__.'/slave.php {workerId}', new class extends AbstractLogger
-{
+$pool = new \Jfnetwork\Parapool\Pool(__DIR__.'/slave.php {workerId}', new class() extends AbstractLogger {
+    /**
+     * {@inheritdoc}
+     */
     public function log($level, $message, array $context = [])
     {
         echo "[$level] ".\strtr($message, (function (array $pairs) {
@@ -22,10 +24,10 @@ $pool = new \Jfnetwork\Parapool\Pool(__DIR__.'/slave.php {workerId}', new class 
 });
 $pool->setWorkerCount(10);
 
-for ($i = 0; $i < 21; $i++) {
+for ($i = 0; $i < 21; ++$i) {
     $pool->send((function ($i) {
         return function ($result) use ($i) {
-            echo $i, '^2 = ', $result, PHP_EOL;
+            echo "$i^2 = $result\n";
         };
     })($i), 'test', ['num' => $i]);
 }

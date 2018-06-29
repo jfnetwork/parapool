@@ -41,6 +41,6 @@ class SlaveLogger extends AbstractLogger
             'level' => $level,
             'message' => "S{workerId}: $message",
             'context' => $context + ['workerId' => $this->workerId],
-        ]));
+        ])."\n");
     }
 }

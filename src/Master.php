@@ -8,7 +8,7 @@ namespace Jfnetwork\Parapool;
 use Psr\Log\LoggerInterface;
 
 /**
- * Class Master
+ * Class Master.
  */
 class Master
 {
@@ -21,27 +21,27 @@ class Master
     /**
      * @var resource process resource
      */
-    protected $resource;
+    private $resource;
     /**
      * @var resource stdin of worker
      */
-    protected $stdinPipe;
+    private $stdinPipe;
     /**
      * @var resource stdout of worker
      */
-    protected $stdoutPipe;
+    private $stdoutPipe;
     /**
      * @var resource stdout of worker
      */
-    protected $stderrPipe;
+    private $stderrPipe;
     /**
      * @var callable current callback
      */
-    protected $callback;
+    private $callback;
     /**
      * @var int ID of Workers
      */
-    protected $workerId;
+    private $workerId;
     /**
      * @var LoggerInterface
      */
@@ -62,16 +62,16 @@ class Master
             self::PIPES,
             $pipes
         );
-        $this->stdinPipe =& $pipes[0];
-        $this->stdoutPipe =& $pipes[1];
-        $this->stderrPipe =& $pipes[2];
+        $this->stdinPipe = &$pipes[0];
+        $this->stdoutPipe = &$pipes[1];
+        $this->stderrPipe = &$pipes[2];
         \stream_set_blocking($this->stdoutPipe, 0);
         \stream_set_blocking($this->stderrPipe, 0);
         $this->logger = $logger;
     }
 
     /**
-     * destruct
+     * destruct.
      */
     public function __destruct()
     {
@@ -79,7 +79,7 @@ class Master
     }
 
     /**
-     * close all resources
+     * close all resources.
      */
     public function close()
     {
@@ -100,7 +100,7 @@ class Master
     }
 
     /**
-     * send work to worker
+     * send work to worker.
      *
      * @param callable $callback called if work is done
      * @param string   $method   name of work
@@ -108,14 +108,14 @@ class Master
      *
      * @return bool
      */
-    public function send(callable $callback, string $method, array $args = []) : bool
+    public function send(callable $callback, string $method, array $args = []): bool
     {
         if ($this->isRunning()) {
             return false;
         }
-        fwrite(
+        \fwrite(
             $this->stdinPipe,
-            json_encode(
+            \json_encode(
                 [
                     'method' => $method,
                     'args' => $args,
@@ -138,13 +138,10 @@ class Master
     }
 
     /**
-     * checks if the worker done
-     *
-     * @return void
+     * checks if the worker done.
      */
     private function checkIfDone()
     {
-
         while ($data = \fgets($this->stderrPipe)) {
             $dataParsed = \json_decode($data, true);
             if (null === $dataParsed) {

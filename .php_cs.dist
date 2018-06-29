@@ -1,0 +1,26 @@
+<?php
+
+$year = \date('Y');
+$project = 'MWD-shop';
+$header = <<<EOF
+This file is part of {$project} project.
+
+jfnetwork GmbH © {$year}
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+EOF;
+$rules = [
+    '@Symfony' => true,
+    '@PHP71Migration' => true,
+    'array_syntax' => ['syntax' => 'short'],
+    'combine_consecutive_issets' => true,
+    'combine_consecutive_unsets' => true,
+    'native_function_invocation' => true,
+    'no_useless_else' => true,
+    'no_useless_return' => true,
+    'ordered_imports' => true,
+    'phpdoc_add_missing_param_annotation' => true,
+    'phpdoc_order' => true,
+];
+return \PhpCsFixer\Config::create()->setUsingCache(true)->setRiskyAllowed(true)->setRules($rules);

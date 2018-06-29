@@ -15,7 +15,7 @@ class Pool
     /**
      * @var Master[] $pool
      */
-    protected $pool = [];
+    private $pool = [];
     /**
      * @var string
      */
@@ -24,6 +24,10 @@ class Pool
      * @var LoggerInterface
      */
     private $logger;
+    /**
+     * @var int
+     */
+    private $currentWorker = 0;
 
     /**
      * Pool constructor.
@@ -58,17 +62,16 @@ class Pool
     public function send(callable $callback, string $method, array $args = [])
     {
         $count = \count($this->pool);
-        static $currentWorker = 0;
         while (true) {
             for ($counter = 0; $counter < $count; $counter++) {
-                $checkWorker = $counter + $currentWorker;
+                $checkWorker = $counter + $this->currentWorker;
                 if ($checkWorker >= $count) {
                     $checkWorker -= $count;
                 }
                 if ($this->pool[$checkWorker]->send($callback, $method, $args)) {
-                    $currentWorker++;
-                    if ($currentWorker >= $count) {
-                        $currentWorker -= $count;
+                    $this->currentWorker++;
+                    if ($this->currentWorker >= $count) {
+                        $this->currentWorker -= $count;
                     }
                     break 2;
                 }
@@ -82,29 +85,31 @@ class Pool
      */
     public function waitUntilDone()
     {
-        while (true) {
-            foreach ($this->pool as $parent) {
-                if ($parent->isRunning()) {
-                    \usleep(1000);
-                    continue 2;
-                }
-            }
-            break;
-        }
+        do {
+            $runningJobs = $this->countRunningJobs();
+        } while ($runningJobs > 0);
     }
 
     /**
      * @return int
      */
-    public function checkPoolForDoneJobs() : int
+    public function countRunningJobs() : int
     {
-        $doneJobs = 0;
+        $runningJobs = 0;
         foreach ($this->pool as $parent) {
             if ($parent->isRunning()) {
-                $doneJobs++;
+                $runningJobs++;
             }
         }
 
-        return $doneJobs;
+        return $runningJobs;
+    }
+
+    /**
+     * Pool destructor.
+     */
+    public function __destruct()
+    {
+        $this->waitUntilDone();
     }
 }
