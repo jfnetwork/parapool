@@ -21,6 +21,10 @@ class Slave
      * @var LoggerInterface
      */
     private $logger;
+    /**
+     * @var resource
+     */
+    private $output;
 
     /**
      * Slave constructor.
@@ -30,6 +34,8 @@ class Slave
      */
     public function __construct(int $workerId, SlaveCallableInterface ...$callables)
     {
+        ob_start();
+
         $stopCallable = new StopCallable();
         $this->callables[$stopCallable->getName()] = $stopCallable;
 
@@ -43,6 +49,15 @@ class Slave
         }
 
         $this->logger = new SlaveLogger($workerId);
+        $this->output = \fopen('php://stdout', 'wb');
+    }
+
+    /**
+     * Slave destructor.
+     */
+    public function __destruct()
+    {
+        \ob_clean();
     }
 
     /**
@@ -82,7 +97,7 @@ class Slave
             if (!$output) {
                 throw new \UnexpectedValueException('JSON returned nothing');
             }
-            echo "$output\n";
+            \fwrite($this->output, "$output\n");
         }
     }
 
