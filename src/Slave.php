@@ -70,7 +70,13 @@ class Slave
                 $this->error("unknown method: {$dataParsed['method']}");
                 continue;
             }
-            $result = $callable->execute($this->logger, $dataParsed['args'] ?? []);
+            try {
+                $result = $callable->execute($this->logger, $dataParsed['args'] ?? []);
+            } catch (\Throwable $exception) {
+                $class = \get_class($exception);
+                $this->error("Exception {$class}: {$exception->getMessage()}");
+                continue;
+            }
 
             $output = json_encode(['result' => $result]);
             if (!$output) {
