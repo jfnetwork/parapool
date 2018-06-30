@@ -46,6 +46,10 @@ class Pool
      */
     public function setWorkerCount(int $workerCount)
     {
+        if ($workerCount < 0) {
+            throw new \InvalidArgumentException('Workers count may not be negative');
+        }
+
         while ($workerCount > \count($this->pool)) {
             $this->pool[] = new Master($this->spawnCommand, \count($this->pool), $this->logger);
         }
@@ -62,6 +66,9 @@ class Pool
     public function send(callable $callback, string $method, array $args = [])
     {
         $count = \count($this->pool);
+        if ($count < 1) {
+            throw new \LogicException('The pool has no workers');
+        }
         while (true) {
             for ($counter = 0; $counter < $count; $counter++) {
                 $checkWorker = $counter + $this->currentWorker;
