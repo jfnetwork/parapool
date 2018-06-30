@@ -11,5 +11,10 @@
         "psr-4": {
             "Jfnetwork\\Parapool\\": "src/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Example\\": "example/"
+        }
     }
 }
