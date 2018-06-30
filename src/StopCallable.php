@@ -29,7 +29,7 @@ class StopCallable implements SlaveCallableInterface
     {
         die(json_encode(
             [
-                'result' => "ok",
+                'result' => 'ok',
             ]
         )."\n");
     }
