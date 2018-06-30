@@ -159,6 +159,12 @@ class Master
                         'data' => $data,
                     ]);
                     break;
+                case $dataParsed['error'] ?? false:
+                    $this->logger->error('M{workerId}: received error: {error}', [
+                        'workerId' => $this->workerId,
+                        'error' => $dataParsed['error'],
+                    ]);
+                    break;
                 case !\array_key_exists('result', $dataParsed):
                     $this->logger->error('M{workerId}: no result received', [
                         'workerId' => $this->workerId,

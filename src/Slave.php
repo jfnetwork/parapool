@@ -56,25 +56,18 @@ class Slave
 
             $dataParsed = json_decode($data, true);
             if (empty($dataParsed) || !is_array($dataParsed)) {
-                $this->logger->error('got something strange: {data}', [
-                    'data' => $data,
-                ]);
-                echo "\n";
+                $this->error("got something strange: $data");
                 continue;
             }
 
             if (!isset($dataParsed['method'])) {
-                $this->logger->error('no method received');
-                echo "\n";
+                $this->error('no method received');
                 continue;
             }
 
             $callable = $this->callables[$dataParsed['method']] ?? null;
             if (null === $callable) {
-                $this->logger->error('unknown method: {method}', [
-                    'method' => $dataParsed['method'],
-                ]);
-                echo "\n";
+                $this->error("unknown method: {$dataParsed['method']}");
                 continue;
             }
             $result = $callable->execute($this->logger, $dataParsed['args'] ?? []);
@@ -85,6 +78,14 @@ class Slave
             }
             echo "$output\n";
         }
+    }
+
+    /**
+     * @param string $error
+     */
+    private function error(string $error)
+    {
+        \fwrite($this->output, \json_encode(['error' => $error])."\n");
     }
 
     // private function dump(...$args)
