@@ -35,7 +35,7 @@ class Master
      */
     private $stderrPipe;
     /**
-     * @var callable current callback
+     * @var null|callable current callback
      */
     private $callback;
     /**
@@ -90,7 +90,7 @@ class Master
         $nop = function () {
         };
         $this->send($nop, 'stop');
-        while (!empty($this->callback)) {
+        while (null !== $this->callback) {
             $this->checkIfDone();
             \usleep(10000);
         }
@@ -134,7 +134,7 @@ class Master
     {
         $this->checkIfDone();
 
-        return !empty($this->callback);
+        return null !== $this->callback;
     }
 
     /**
@@ -181,7 +181,7 @@ class Master
                         break;
                     }
             }
-            unset($this->callback);
+            $this->callback = null;
         }
     }
 }
