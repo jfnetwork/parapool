@@ -27,10 +27,11 @@ class StopCallable implements SlaveCallableInterface
      */
     public function execute(LoggerInterface $logger, array $args)
     {
-        die(json_encode(
+        \file_put_contents('php://stdout', json_encode(
             [
                 'result' => 'ok',
             ]
         )."\n");
+        die;
     }
 }
