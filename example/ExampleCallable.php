@@ -1,35 +1,33 @@
 <?php
+
 /**
  * (c) 2018 jfnetwork GmbH.
  */
 
 namespace Example;
 
+use Exception;
+use InvalidArgumentException;
 use Jfnetwork\Parapool\SlaveCallableInterface;
 use Psr\Log\LoggerInterface;
 
-/**
- * Class ExampleCallable
- */
+use function random_int;
+use function usleep;
+
 class ExampleCallable implements SlaveCallableInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return 'test';
     }
 
     /**
-     * {@inheritdoc}
-     *
-     * @throws \Exception
+     * @throws Exception
      */
-    public function execute(LoggerInterface $logger, array $args)
+    public function execute(LoggerInterface $logger, array $args): mixed
     {
         if (13 === $args['num']) {
-            throw new \InvalidArgumentException('oh no, 13!');
+            throw new InvalidArgumentException('oh no, 13!');
         }
 
         $result = $args['num'] ** 2;
@@ -41,7 +39,7 @@ class ExampleCallable implements SlaveCallableInterface
 
         echo "some shit\n"; // all output will be suppressed
 
-        \usleep(\random_int(500000, 2000000));
+        usleep(random_int(500000, 2000000));
 
         return $result;
     }

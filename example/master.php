@@ -7,11 +7,7 @@ $pool = new \Jfnetwork\Parapool\Pool(__DIR__.'/slave.php {workerId}', new \Examp
 $pool->setWorkerCount(10);
 
 for ($i = 0; $i < 101; ++$i) {
-    $pool->send((function ($i) {
-        return function ($result) use ($i) {
-            echo "$i^2 = $result\n";
-        };
-    })($i), 'test', ['num' => $i]);
+    $pool->send((static fn($i) => static fn($result) => print("$i^2 = $result\n"))($i), 'test', ['num' => $i]);
 }
 $pool->send(function () {
     return false;

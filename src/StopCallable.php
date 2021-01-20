@@ -1,37 +1,32 @@
 <?php
+
 /**
  * (c) 2018 jfnetwork GmbH.
  */
 
 namespace Jfnetwork\Parapool;
 
+use JetBrains\PhpStorm\NoReturn;
 use Psr\Log\LoggerInterface;
 
+use function fwrite;
+
+use const STDOUT;
+
 /**
- * Class StopCallable
+ * @SuppressWarnings(PHPMD)
  */
 class StopCallable implements SlaveCallableInterface
 {
-    /**
-     * @inheritdoc
-     */
     public function getName(): string
     {
         return 'stop';
     }
 
-    /**
-     * @inheritdoc
-     *
-     * @SuppressWarnings(PHPMD.ExitExpression)
-     */
-    public function execute(LoggerInterface $logger, array $args)
+    #[NoReturn]
+    public function execute(LoggerInterface $logger, array $args): mixed
     {
-        \file_put_contents('php://stdout', json_encode(
-            [
-                'result' => 'ok',
-            ]
-        )."\n");
+        fwrite(STDOUT, "{\"result\":\"ok\"}\n");
         die;
     }
 }

@@ -1,28 +1,31 @@
 <?php
+
 /**
  * (c) 2018 jfnetwork GmbH.
  */
 
 namespace Example;
 
-/**
- * Class ExampleLogger
- */
-class ExampleLogger extends \Psr\Log\AbstractLogger
+use Psr\Log\AbstractLogger;
+
+use function strtr;
+
+class ExampleLogger extends AbstractLogger
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function log($level, $message, array $context = [])
+    public function log($level, $message, array $context = []): void
     {
-        echo "[$level] ".\strtr($message, (function (array $pairs) {
-            $result = [];
+        echo "[$level] " . strtr(
+            $message,
+            (static function (array $pairs) {
+                $result = [];
+                foreach ($pairs as $key => $value) {
+                    $result["{{$key}}"] = $value;
+                }
 
-            foreach ($pairs as $key => $value) {
-                $result["{{$key}}"] = $value;
-            }
-
-            return $result;
-        })($context))."\n";
+                return $result;
+            })(
+                $context
+            )
+        ) . "\n";
     }
 }

@@ -5,33 +5,34 @@
 
 namespace Jfnetwork\Parapool;
 
-use function is_array;
-use Psr\Log\LoggerInterface;
+use LogicException;
 
-/**
- * Class Slave
- */
+use Throwable;
+
+use UnexpectedValueException;
+
+use function fgets;
+use function fopen;
+use function fwrite;
+use function get_class;
+use function is_array;
+use function json_encode;
+use function ob_clean;
+
 class Slave
 {
     /**
      * @var SlaveCallableInterface[]
      */
-    private $callables = [];
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    private array $callables = [];
+
+    private SlaveLogger $logger;
+
     /**
      * @var resource
      */
     private $output;
 
-    /**
-     * Slave constructor.
-     *
-     * @param int                    $workerId
-     * @param SlaveCallableInterface ...$callables
-     */
     public function __construct(int $workerId, SlaveCallableInterface ...$callables)
     {
         ob_start();
@@ -42,32 +43,26 @@ class Slave
         foreach ($callables as $callable) {
             $name = $callable->getName();
             if (isset($this->callables[$name])) {
-                throw new \LogicException(\sprintf('Callable with name %s exists already', $name));
+                throw new LogicException("Callable with name {$name} exists already");
             }
 
             $this->callables[$name] = $callable;
         }
 
         $this->logger = new SlaveLogger($workerId);
-        $this->output = \fopen('php://stdout', 'wb');
+        $this->output = fopen('php://stdout', 'wb');
     }
 
-    /**
-     * Slave destructor.
-     */
     public function __destruct()
     {
-        \ob_clean();
+        ob_clean();
     }
 
-    /**
-     * @return void
-     */
-    public function loop()
+    public function loop(): void
     {
-        $input = \fopen('php://stdin', 'rb');
+        $input = fopen('php://stdin', 'rb');
         while (true) {
-            $data = \fgets($input);
+            $data = fgets($input);
 
             $dataParsed = json_decode($data, true);
             if (empty($dataParsed) || !is_array($dataParsed)) {
@@ -87,26 +82,23 @@ class Slave
             }
             try {
                 $result = $callable->execute($this->logger, $dataParsed['args'] ?? []);
-            } catch (\Throwable $exception) {
-                $class = \get_class($exception);
+            } catch (Throwable $exception) {
+                $class = $exception::class;
                 $this->error("Exception {$class}: {$exception->getMessage()}");
                 continue;
             }
 
             $output = json_encode(['result' => $result]);
             if (!$output) {
-                throw new \UnexpectedValueException('JSON returned nothing');
+                throw new UnexpectedValueException('JSON returned nothing');
             }
-            \fwrite($this->output, "$output\n");
+            fwrite($this->output, "$output\n");
         }
     }
 
-    /**
-     * @param string $error
-     */
-    private function error(string $error)
+    private function error(string $error): void
     {
-        \fwrite($this->output, \json_encode(['error' => $error])."\n");
+        fwrite($this->output, json_encode(['error' => $error]) . "\n");
     }
 
     // private function dump(...$args)

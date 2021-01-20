@@ -1,4 +1,5 @@
 <?php
+
 /**
  * (c) 2018 jfnetwork GmbH.
  */
@@ -7,40 +8,27 @@ namespace Jfnetwork\Parapool;
 
 use Psr\Log\AbstractLogger;
 
-/**
- * Class SlaveLogger
- */
+use function fwrite;
+use function json_encode;
+
 class SlaveLogger extends AbstractLogger
 {
     /**
      * @var resource
      */
     private $log;
-    /**
-     * @var int
-     */
-    private $workerId;
 
-    /**
-     * SlaveLogger constructor.
-     *
-     * @param int $workerId
-     */
-    public function __construct(int $workerId)
+    public function __construct(private int $workerId)
     {
         $this->log = \fopen('php://stderr', 'wb+');
-        $this->workerId = $workerId;
     }
 
-    /**
-     * @inheritdoc
-     */
     public function log($level, $message, array $context = [])
     {
-        \fwrite($this->log, \json_encode([
+        fwrite($this->log, json_encode([
             'level' => $level,
             'message' => "S{workerId}: $message",
             'context' => $context + ['workerId' => $this->workerId],
-        ])."\n");
+        ]) . "\n");
     }
 }
