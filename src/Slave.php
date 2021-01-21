@@ -1,23 +1,25 @@
 <?php
+
 /**
  * (c) 2018 jfnetwork GmbH.
  */
 
 namespace Jfnetwork\Parapool;
 
+use http\Exception\UnexpectedValueException;
+use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
+use Jfnetwork\Parapool\Messenger\Message\ThrowableMessage;
+use Jfnetwork\Parapool\Messenger\Message\WorkMessage;
+use Jfnetwork\Parapool\Messenger\Message\WorkResultMessage;
+use Jfnetwork\Parapool\Messenger\ResourceStream;
 use LogicException;
-
+use RuntimeException;
 use Throwable;
 
-use UnexpectedValueException;
-
-use function fgets;
-use function fopen;
-use function fwrite;
-use function get_class;
-use function is_array;
-use function json_encode;
 use function ob_clean;
+
+use const STDIN;
+use const STDOUT;
 
 class Slave
 {
@@ -25,17 +27,17 @@ class Slave
      * @var SlaveCallableInterface[]
      */
     private array $callables = [];
-
     private SlaveLogger $logger;
-
-    /**
-     * @var resource
-     */
-    private $output;
+    private DuplexStreamMessenger $messenger;
 
     public function __construct(int $workerId, SlaveCallableInterface ...$callables)
     {
         ob_start();
+
+        $this->messenger = new DuplexStreamMessenger(
+            new ResourceStream(STDIN),
+            new ResourceStream(STDOUT),
+        );
 
         $stopCallable = new StopCallable();
         $this->callables[$stopCallable->getName()] = $stopCallable;
@@ -49,8 +51,7 @@ class Slave
             $this->callables[$name] = $callable;
         }
 
-        $this->logger = new SlaveLogger($workerId);
-        $this->output = fopen('php://stdout', 'wb');
+        $this->logger = new SlaveLogger($workerId, $this->messenger);
     }
 
     public function __destruct()
@@ -60,51 +61,26 @@ class Slave
 
     public function loop(): void
     {
-        $input = fopen('php://stdin', 'rb');
         while (true) {
-            $data = fgets($input);
-
-            $dataParsed = json_decode($data, true);
-            if (empty($dataParsed) || !is_array($dataParsed)) {
-                $this->error("got something strange: $data");
+            $message = $this->messenger->readBlocking();
+            if (null === $message) {
                 continue;
             }
 
-            if (!isset($dataParsed['method'])) {
-                $this->error('no method received');
+            if ($message instanceof WorkMessage) {
+                try {
+                    $slaveCallable = $this->callables[$message->getMethod()] ?? null;
+                    if (null === $slaveCallable) {
+                        throw new RuntimeException("Method {$message->getMethod()} is not defined");
+                    }
+                    $result = $slaveCallable->execute($this->logger, $message->getArguments());
+                    $this->messenger->write(new WorkResultMessage($result));
+                } catch (Throwable $throwable) {
+                    $this->messenger->write(new ThrowableMessage($throwable));
+                }
                 continue;
             }
-
-            $callable = $this->callables[$dataParsed['method']] ?? null;
-            if (null === $callable) {
-                $this->error("unknown method: {$dataParsed['method']}");
-                continue;
-            }
-            try {
-                $result = $callable->execute($this->logger, $dataParsed['args'] ?? []);
-            } catch (Throwable $exception) {
-                $class = $exception::class;
-                $this->error("Exception {$class}: {$exception->getMessage()}");
-                continue;
-            }
-
-            $output = json_encode(['result' => $result]);
-            if (!$output) {
-                throw new UnexpectedValueException('JSON returned nothing');
-            }
-            fwrite($this->output, "$output\n");
+            throw new UnexpectedValueException('fuck');
         }
     }
-
-    private function error(string $error): void
-    {
-        fwrite($this->output, json_encode(['error' => $error]) . "\n");
-    }
-
-    // private function dump(...$args)
-    // {
-    //     ob_start();
-    //     var_dump(...$args);
-    //     $this->logger->critical(ob_get_clean());
-    // }
 }

@@ -6,29 +6,18 @@
 
 namespace Jfnetwork\Parapool;
 
+use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
+use Jfnetwork\Parapool\Messenger\Message\LogMessage;
 use Psr\Log\AbstractLogger;
-
-use function fwrite;
-use function json_encode;
 
 class SlaveLogger extends AbstractLogger
 {
-    /**
-     * @var resource
-     */
-    private $log;
-
-    public function __construct(private int $workerId)
+    public function __construct(private int $workerId, private DuplexStreamMessenger $duplexStreamMessenger)
     {
-        $this->log = \fopen('php://stderr', 'wb+');
     }
 
-    public function log($level, $message, array $context = [])
+    public function log($level, $message, array $context = []): void
     {
-        fwrite($this->log, json_encode([
-            'level' => $level,
-            'message' => "S{workerId}: $message",
-            'context' => $context + ['workerId' => $this->workerId],
-        ]) . "\n");
+        $this->duplexStreamMessenger->write(new LogMessage($level, $message, $context));
     }
 }

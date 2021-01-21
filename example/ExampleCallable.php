@@ -11,8 +11,7 @@ use InvalidArgumentException;
 use Jfnetwork\Parapool\SlaveCallableInterface;
 use Psr\Log\LoggerInterface;
 
-use function random_int;
-use function usleep;
+use function hash;
 
 class ExampleCallable implements SlaveCallableInterface
 {
@@ -26,6 +25,9 @@ class ExampleCallable implements SlaveCallableInterface
      */
     public function execute(LoggerInterface $logger, array $args): mixed
     {
+        $logger->critical('got {number}', [
+            'number' => $args['num'],
+        ]);
         if (13 === $args['num']) {
             throw new InvalidArgumentException('oh no, 13!');
         }
@@ -39,8 +41,15 @@ class ExampleCallable implements SlaveCallableInterface
 
         echo "some shit\n"; // all output will be suppressed
 
-        usleep(random_int(500000, 2000000));
+        // $stop = microtime(true) + random_int(500000, 2000000) / 1000000;
+        // $someShit = random_bytes(512);
+        // while ($stop > microtime(true)) {
+        //     $someShit = hash('SHA512', $someShit);
+        // }
 
-        return $result;
+        return [
+            'num' => $result,
+            'hash' => hash('SHA512', $args['much_data']),
+        ];
     }
 }

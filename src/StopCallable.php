@@ -26,7 +26,7 @@ class StopCallable implements SlaveCallableInterface
     #[NoReturn]
     public function execute(LoggerInterface $logger, array $args): mixed
     {
-        fwrite(STDOUT, "{\"result\":\"ok\"}\n");
+        return ['result' => 'ok'];
         die;
     }
 }
