@@ -17,10 +17,15 @@ use function str_split;
 use function strlen;
 use function unpack;
 
+use const STDIN;
+use const STDOUT;
+
 class DuplexStreamMessenger
 {
     private const MAX_LENGTH = 1 << 10;
     private const LENGTH_PACK = 'V';
+    private const MORE_PACK = 'c';
+    private const UNPACK = self::LENGTH_PACK . 'length/' . self::MORE_PACK . 'more';
 
     private int $headerLength;
 
@@ -32,7 +37,16 @@ class DuplexStreamMessenger
         if (null === $this->serialize) {
             $this->serialize = SerializerFactory::createSerializer();
         }
-        $this->headerLength = strlen(pack(self::LENGTH_PACK, 0)) + 1;
+        $this->headerLength = strlen(pack(self::LENGTH_PACK, 0)) + strlen(pack(self::MORE_PACK, 0));
+    }
+
+    public static function createStandardIO(?SerializerInterface $serializer = null): self
+    {
+        return new self(
+            new ResourceStream(STDIN),
+            new ResourceStream(STDOUT),
+            $serializer
+        );
     }
 
     public function write(MessageInterface $data): void
@@ -65,7 +79,7 @@ class DuplexStreamMessenger
             if (!$header) {
                 return null;
             }
-            ['length' => $length, 'more' => $more] = unpack(self::LENGTH_PACK . 'length/cmore', $header);
+            ['length' => $length, 'more' => $more] = unpack(self::UNPACK, $header);
             $packet .= $this->input->read($length);
         } while ($more);
         return $this->serialize->unserialize($packet);

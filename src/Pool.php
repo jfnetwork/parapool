@@ -7,8 +7,8 @@
 namespace Jfnetwork\Parapool;
 
 use InvalidArgumentException;
+use Jfnetwork\Parapool\Messenger\MessageHandler\MessageHandlerStorage;
 use LogicException;
-use Psr\Log\LoggerInterface;
 
 use function count;
 use function usleep;
@@ -22,10 +22,8 @@ class Pool
 
     private int $currentWorker = 0;
 
-    public function __construct(
-        private string $spawnCommand,
-        private LoggerInterface $logger,
-    ) {
+    public function __construct(private string $spawnCommand, private MessageHandlerStorage $messageHandlerStorage,)
+    {
     }
 
     public function setWorkerCount(int $workerCount): void
@@ -35,7 +33,7 @@ class Pool
         }
 
         while ($workerCount > count($this->pool)) {
-            $this->pool[] = new Master($this->spawnCommand, count($this->pool), $this->logger);
+            $this->pool[] = new Master($this->spawnCommand, count($this->pool), $this->messageHandlerStorage);
         }
         while ($workerCount < count($this->pool)) {
             $this->pool[count($this->pool) - 1]->close();
@@ -43,7 +41,7 @@ class Pool
         }
     }
 
-    public function send(callable $callback, string $method, array $args = []): void
+    public function send(WorkCallbackInterface $callback, string $method, array $args = []): void
     {
         $count = count($this->pool);
         if ($count < 1) {

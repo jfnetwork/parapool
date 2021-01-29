@@ -12,7 +12,7 @@ use Psr\Log\AbstractLogger;
 
 class SlaveLogger extends AbstractLogger
 {
-    public function __construct(private int $workerId, private DuplexStreamMessenger $duplexStreamMessenger)
+    public function __construct(private DuplexStreamMessenger $duplexStreamMessenger)
     {
     }
 

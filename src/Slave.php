@@ -6,41 +6,27 @@
 
 namespace Jfnetwork\Parapool;
 
-use http\Exception\UnexpectedValueException;
 use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
 use Jfnetwork\Parapool\Messenger\Message\ThrowableMessage;
 use Jfnetwork\Parapool\Messenger\Message\WorkMessage;
 use Jfnetwork\Parapool\Messenger\Message\WorkResultMessage;
-use Jfnetwork\Parapool\Messenger\ResourceStream;
 use LogicException;
 use RuntimeException;
 use Throwable;
+use UnexpectedValueException;
 
 use function ob_clean;
-
-use const STDIN;
-use const STDOUT;
 
 class Slave
 {
     /**
-     * @var SlaveCallableInterface[]
+     * @var array<SlaveCallableInterface>
      */
     private array $callables = [];
-    private SlaveLogger $logger;
-    private DuplexStreamMessenger $messenger;
 
-    public function __construct(int $workerId, SlaveCallableInterface ...$callables)
+    public function __construct(private DuplexStreamMessenger $messenger, SlaveCallableInterface ...$callables)
     {
         ob_start();
-
-        $this->messenger = new DuplexStreamMessenger(
-            new ResourceStream(STDIN),
-            new ResourceStream(STDOUT),
-        );
-
-        $stopCallable = new StopCallable();
-        $this->callables[$stopCallable->getName()] = $stopCallable;
 
         foreach ($callables as $callable) {
             $name = $callable->getName();
@@ -50,8 +36,6 @@ class Slave
 
             $this->callables[$name] = $callable;
         }
-
-        $this->logger = new SlaveLogger($workerId, $this->messenger);
     }
 
     public function __destruct()
@@ -73,14 +57,14 @@ class Slave
                     if (null === $slaveCallable) {
                         throw new RuntimeException("Method {$message->getMethod()} is not defined");
                     }
-                    $result = $slaveCallable->execute($this->logger, $message->getArguments());
+                    $result = $slaveCallable->execute($message->getArguments());
                     $this->messenger->write(new WorkResultMessage($result));
                 } catch (Throwable $throwable) {
                     $this->messenger->write(new ThrowableMessage($throwable));
                 }
                 continue;
             }
-            throw new UnexpectedValueException('fuck');
+            throw new UnexpectedValueException('unknown message type');
         }
     }
 }

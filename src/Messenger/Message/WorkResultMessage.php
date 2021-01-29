@@ -6,7 +6,9 @@
 
 namespace Jfnetwork\Parapool\Messenger\Message;
 
-class WorkResultMessage implements MessageInterface
+use Throwable;
+
+class WorkResultMessage implements MessageInterface, MessageWorkDoneInterface
 {
     public function __construct(private mixed $result)
     {
@@ -15,5 +17,10 @@ class WorkResultMessage implements MessageInterface
     public function getResult(): mixed
     {
         return $this->result;
+    }
+
+    public function getThrowable(): ?Throwable
+    {
+        return null;
     }
 }

@@ -11,5 +11,5 @@ use Psr\Log\LoggerInterface;
 interface SlaveCallableInterface
 {
     public function getName(): string;
-    public function execute(LoggerInterface $logger, array $args): mixed;
+    public function execute(array $args): mixed;
 }

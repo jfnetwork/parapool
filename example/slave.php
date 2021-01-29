@@ -1,9 +1,18 @@
 #!/usr/bin/env php8.0
 <?php
 
-require __DIR__.'/../vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
-$exampleCallable = new \Example\ExampleCallable();
+use Example\ExampleCallable;
+use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
+use Jfnetwork\Parapool\Slave;
+use Jfnetwork\Parapool\SlaveLogger;
 
-$slave = new \Jfnetwork\Parapool\Slave((int) $argv[1], $exampleCallable);
+$messenger = DuplexStreamMessenger::createStandardIO();
+
+$slaveLogger = new SlaveLogger($messenger);
+
+$exampleCallable = new ExampleCallable($slaveLogger);
+
+$slave = new Slave($messenger, $exampleCallable);
 $slave->loop();

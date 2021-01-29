@@ -7,15 +7,13 @@
 namespace Jfnetwork\Parapool;
 
 use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
-use Jfnetwork\Parapool\Messenger\Message\LogMessage;
-use Jfnetwork\Parapool\Messenger\Message\ThrowableMessage;
+use Jfnetwork\Parapool\Messenger\Message\MessageWorkDoneInterface;
 use Jfnetwork\Parapool\Messenger\Message\WorkMessage;
-use Jfnetwork\Parapool\Messenger\Message\WorkResultMessage;
+use Jfnetwork\Parapool\Messenger\MessageHandler\MessageHandlerStorage;
 use Jfnetwork\Parapool\Messenger\ResourceStream;
-use Psr\Log\LoggerInterface;
-use RuntimeException;
-use Throwable;
+use Jfnetwork\Parapool\Messenger\Serializer\SerializerInterface;
 
+use function proc_get_status;
 use function proc_open;
 use function proc_terminate;
 use function str_replace;
@@ -29,31 +27,19 @@ class Master
     ];
 
     /**
-     * @var resource process resource
+     * @var resource|null process resource
      */
-    private $resource;
-
+    private $resource = null;
     private DuplexStreamMessenger $messenger;
-
-    /**
-     * @var null|callable current callback
-     */
-    private $callback;
+    private ?WorkCallbackInterface $callback = null;
 
     public function __construct(
         string $spawnCommand,
         private int $workerId,
-        private LoggerInterface $logger,
+        private MessageHandlerStorage $messageHandlerStorage,
+        private ?SerializerInterface $serializer = null,
     ) {
-        $this->resource = proc_open(
-            str_replace('{workerId}', $workerId, $spawnCommand),
-            self::PIPES,
-            $pipes
-        );
-        $this->messenger = new DuplexStreamMessenger(
-            new ResourceStream($pipes[1]),
-            new ResourceStream($pipes[0]),
-        );
+        $this->respawn($workerId, $spawnCommand);
     }
 
     public function __destruct()
@@ -76,44 +62,15 @@ class Master
         if (null === $message) {
             return;
         }
-        switch (true) {
-            case $message instanceof LogMessage:
-                $this->logger->log(
-                    $message->getLevel(),
-                    "M{$this->workerId}: {$message->getMessage()}",
-                    $message->getContext()
-                );
-                return;
-            case $message instanceof ThrowableMessage:
-                $this->logger->error(
-                    'M{workerId}: received error: {error}',
-                    [
-                        'workerId' => $this->workerId,
-                        'error' => $message->getThrowable()->getMessage(),
-                    ]
-                );
-                ($this->callback)(null, $message->getThrowable());
-                break;
-            case $message instanceof WorkResultMessage:
-                try {
-                    ($this->callback)($message->getResult(), null);
-                } catch (Throwable $exception) {
-                    $this->logger->error(
-                        'M{workerId}: Exception: {message}',
-                        [
-                            'workerId' => $this->workerId,
-                            'message' => $exception->getMessage(),
-                        ]
-                    );
-                }
-                break;
-            default:
-                throw new RuntimeException('unsupported message');
+        if ($message instanceof MessageWorkDoneInterface) {
+            $this->callback->callback($message->getResult(), $message->getThrowable());
+            $this->callback = null;
+            return;
         }
-        $this->callback = null;
+        $this->messageHandlerStorage->handle($this->workerId, $message);
     }
 
-    public function send(callable $callback, string $method, array $args = []): bool
+    public function send(WorkCallbackInterface $callback, string $method, array $args = []): bool
     {
         if ($this->isRunning()) {
             return false;
@@ -129,5 +86,24 @@ class Master
         $this->checkIfDone();
 
         return null !== $this->callback;
+    }
+
+    public function respawn(int $workerId, string $spawnCommand)
+    {
+        if (null !== $this->resource && proc_get_status($this->resource)['running']) {
+            proc_terminate($this->resource);
+        }
+        $this->resource = proc_open(
+            str_replace('{workerId}', $workerId, $spawnCommand),
+            self::PIPES,
+            $pipes
+        );
+        $this->messenger = new DuplexStreamMessenger(
+            new ResourceStream($pipes[1]),
+            new ResourceStream($pipes[0]),
+            $this->serializer,
+        );
+
+        return $pipes;
     }
 }
