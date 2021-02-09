@@ -32,7 +32,7 @@ foreach (range(0, 100) as $i) {
                 return;
             }
 
-            public function onException(?Throwable $throwable = null): void
+            public function onException(Throwable $throwable = null): void
             {
                 var_dump($throwable);
             }
@@ -49,9 +49,8 @@ $pool->send(
             var_dump($result);
         }
 
-        public function onException(?Throwable $throwable = null): void
+        public function onException(Throwable $throwable = null): void
         {
-            var_dump($throwable);
             throw $throwable;
         }
     },
