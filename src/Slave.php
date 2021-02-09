@@ -6,12 +6,12 @@
 
 namespace Jfnetwork\Parapool;
 
+use Jfnetwork\Parapool\Exception\MethodNotFoundException;
 use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
 use Jfnetwork\Parapool\Messenger\Message\ThrowableMessage;
 use Jfnetwork\Parapool\Messenger\Message\WorkMessage;
 use Jfnetwork\Parapool\Messenger\Message\WorkResultMessage;
 use LogicException;
-use RuntimeException;
 use Throwable;
 use UnexpectedValueException;
 
@@ -55,7 +55,7 @@ class Slave
                 try {
                     $slaveCallable = $this->callables[$message->getMethod()] ?? null;
                     if (null === $slaveCallable) {
-                        throw new RuntimeException("Method {$message->getMethod()} is not defined");
+                        throw new MethodNotFoundException("Method {$message->getMethod()} is not defined");
                     }
                     $result = $slaveCallable->execute($message->getArguments());
                     $this->messenger->write(new WorkResultMessage($result));

@@ -26,12 +26,14 @@ foreach (range(0, 100) as $i) {
             {
             }
 
-            public function callback($result, ?Throwable $throwable = null): void
+            public function onSuccess(mixed $result): void
             {
-                if (null === $throwable) {
-                    var_dump("{$this->num}^2 = {$result['num']}", $this->hash === $result['hash']);
-                    return;
-                }
+                var_dump("{$this->num}^2 = {$result['num']}", $this->hash === $result['hash']);
+                return;
+            }
+
+            public function onException(?Throwable $throwable = null): void
+            {
                 var_dump($throwable);
             }
         },
@@ -42,9 +44,18 @@ foreach (range(0, 100) as $i) {
 $pool->send(
     new class () implements WorkCallbackInterface
     {
-        public function callback($result, ?Throwable $throwable = null): void
+        public function onSuccess(mixed $result): void
         {
+            var_dump($result);
+        }
+
+        public function onException(?Throwable $throwable = null): void
+        {
+            var_dump($throwable);
+            throw $throwable;
         }
     },
     'testFailed'
 );
+$pool->waitUntilDone();
+echo "done\n";

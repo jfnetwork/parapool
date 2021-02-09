@@ -13,6 +13,8 @@ use Jfnetwork\Parapool\Messenger\MessageHandler\MessageHandlerStorage;
 use Jfnetwork\Parapool\Messenger\ResourceStream;
 use Jfnetwork\Parapool\Messenger\Serializer\SerializerInterface;
 
+use RuntimeException;
+
 use function proc_get_status;
 use function proc_open;
 use function proc_terminate;
@@ -63,8 +65,13 @@ class Master
             return;
         }
         if ($message instanceof MessageWorkDoneInterface) {
-            $this->callback->callback($message->getResult(), $message->getThrowable());
+            $callback = $this->callback ?? throw new RuntimeException('no callback O.o');
             $this->callback = null;
+            if (null !== $message->getThrowable()) {
+                $callback->onException($message->getThrowable());
+                return;
+            }
+            $callback->onSuccess($message->getResult());
             return;
         }
         $this->messageHandlerStorage->handle($this->workerId, $message);

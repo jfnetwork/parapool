@@ -10,5 +10,6 @@ use Throwable;
 
 interface WorkCallbackInterface
 {
-    public function callback($result, ?Throwable $throwable = null): void;
+    public function onSuccess(mixed $result): void;
+    public function onException(?Throwable $throwable = null): void;
 }
