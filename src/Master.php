@@ -6,6 +6,7 @@
 
 namespace Jfnetwork\Parapool;
 
+use Exception;
 use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
 use Jfnetwork\Parapool\Messenger\Message\MessageWorkDoneInterface;
 use Jfnetwork\Parapool\Messenger\Message\WorkMessage;
@@ -34,13 +35,19 @@ class Master
     private $resource = null;
     private DuplexStreamMessenger $messenger;
     private ?WorkCallbackInterface $callback = null;
+    private int $workerId;
+    private MessageHandlerStorage $messageHandlerStorage;
+    private ?SerializerInterface $serializer;
 
     public function __construct(
         string $spawnCommand,
-        private int $workerId,
-        private MessageHandlerStorage $messageHandlerStorage,
-        private ?SerializerInterface $serializer = null,
+        int $workerId,
+        MessageHandlerStorage $messageHandlerStorage,
+        ?SerializerInterface $serializer = null
     ) {
+        $this->serializer = $serializer;
+        $this->messageHandlerStorage = $messageHandlerStorage;
+        $this->workerId = $workerId;
         $this->respawn($workerId, $spawnCommand);
     }
 
@@ -65,7 +72,10 @@ class Master
             return;
         }
         if ($message instanceof MessageWorkDoneInterface) {
-            $callback = $this->callback ?? throw new RuntimeException('no callback O.o');
+            if (empty($this->callback)) {
+                throw new RuntimeException('no callback O.o');
+            }
+            $callback = $this->callback;
             $this->callback = null;
             if (null !== $message->getThrowable()) {
                 $callback->onException($message->getThrowable());

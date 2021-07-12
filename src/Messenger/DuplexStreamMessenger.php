@@ -28,12 +28,18 @@ class DuplexStreamMessenger
     private const UNPACK = self::LENGTH_PACK . 'length/' . self::MORE_PACK . 'more';
 
     private int $headerLength;
+    private ResourceStream $input;
+    private ResourceStream $output;
+    private ?SerializerInterface $serialize;
 
     public function __construct(
-        private ResourceStream $input,
-        private ResourceStream $output,
-        private ?SerializerInterface $serialize = null,
+        ResourceStream $input,
+        ResourceStream $output,
+        ?SerializerInterface $serialize = null
     ) {
+        $this->serialize = $serialize;
+        $this->output = $output;
+        $this->input = $input;
         if (null === $this->serialize) {
             $this->serialize = SerializerFactory::createSerializer();
         }

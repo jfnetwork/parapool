@@ -1,4 +1,5 @@
 <?php
+
 /*
  * (c) 2021 jfnetwork GmbH.
  */

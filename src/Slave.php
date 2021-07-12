@@ -24,8 +24,11 @@ class Slave
      */
     private array $callables = [];
 
-    public function __construct(private DuplexStreamMessenger $messenger, SlaveCallableInterface ...$callables)
+    private DuplexStreamMessenger $messenger;
+
+    public function __construct(DuplexStreamMessenger $messenger, SlaveCallableInterface ...$callables)
     {
+        $this->messenger = $messenger;
         ob_start();
 
         foreach ($callables as $callable) {

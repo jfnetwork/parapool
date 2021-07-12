@@ -12,12 +12,12 @@ use function unserialize;
 class Serializer implements SerializerInterface
 {
 
-    public function serialize(mixed $data): string
+    public function serialize($data): string
     {
         return serialize($data);
     }
 
-    public function unserialize(string $data): mixed
+    public function unserialize(string $data)
     {
         return unserialize($data);
     }

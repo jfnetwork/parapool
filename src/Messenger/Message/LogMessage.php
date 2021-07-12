@@ -8,8 +8,15 @@ namespace Jfnetwork\Parapool\Messenger\Message;
 
 class LogMessage implements MessageInterface
 {
-    public function __construct(private string $level, private string $message, private array $context = [])
+    private string $level;
+    private string $message;
+    private array $context;
+
+    public function __construct(string $level, string $message, array $context = [])
     {
+        $this->context = $context;
+        $this->message = $message;
+        $this->level = $level;
     }
 
     public function getLevel(): string

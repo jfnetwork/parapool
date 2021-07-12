@@ -10,11 +10,17 @@ use Throwable;
 
 class ThrowableMessage implements MessageInterface, MessageWorkDoneInterface
 {
-    public function __construct(private Throwable $throwable)
+    private Throwable $throwable;
+
+    public function __construct(Throwable $throwable)
     {
+        $this->throwable = $throwable;
     }
 
-    public function getResult(): mixed
+    /**
+     * @return mixed
+     */
+    public function getResult()
     {
         return null;
     }

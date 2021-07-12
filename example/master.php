@@ -22,11 +22,16 @@ foreach (range(0, 100) as $i) {
     $pool->send(
         new class ($i, $hash) implements WorkCallbackInterface
         {
-            public function __construct(private int $num, private string $hash)
+            private int $num;
+            private string $hash;
+
+            public function __construct(int $num, string $hash)
             {
+                $this->hash = $hash;
+                $this->num = $num;
             }
 
-            public function onSuccess(mixed $result): void
+            public function onSuccess($result): void
             {
                 var_dump("{$this->num}^2 = {$result['num']}", $this->hash === $result['hash']);
                 return;
@@ -44,7 +49,7 @@ foreach (range(0, 100) as $i) {
 $pool->send(
     new class () implements WorkCallbackInterface
     {
-        public function onSuccess(mixed $result): void
+        public function onSuccess($result): void
         {
             var_dump($result);
         }

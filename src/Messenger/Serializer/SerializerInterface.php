@@ -7,6 +7,6 @@ namespace Jfnetwork\Parapool\Messenger\Serializer;
 
 interface SerializerInterface
 {
-    public function serialize(mixed $data): string;
-    public function unserialize(string $data): mixed;
+    public function serialize($data): string;
+    public function unserialize(string $data);
 }

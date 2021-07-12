@@ -19,11 +19,14 @@ class Pool
      * @var Master[] $pool
      */
     private array $pool = [];
-
     private int $currentWorker = 0;
+    private string $spawnCommand;
+    private MessageHandlerStorage $messageHandlerStorage;
 
-    public function __construct(private string $spawnCommand, private MessageHandlerStorage $messageHandlerStorage,)
+    public function __construct(string $spawnCommand, MessageHandlerStorage $messageHandlerStorage)
     {
+        $this->messageHandlerStorage = $messageHandlerStorage;
+        $this->spawnCommand = $spawnCommand;
     }
 
     public function setWorkerCount(int $workerCount): void

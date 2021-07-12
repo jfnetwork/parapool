@@ -18,8 +18,12 @@ use function stream_set_blocking;
 
 class ResourceStream
 {
-    public function __construct(private $resource)
+    /** @var resource */
+    private $resource;
+
+    public function __construct($resource)
     {
+        $this->resource = $resource;
         if (!is_resource($resource)) {
             throw new InvalidArgumentException('It will be only resource accepted');
         }
@@ -27,7 +31,7 @@ class ResourceStream
 
     public function write(string $data): int
     {
-        $result = fwrite(stream: $this->resource, data: $data);
+        $result = fwrite($this->resource, $data);
         if (false === $result) {
             throw new RuntimeException(error_get_last()['message']);
         }
@@ -36,7 +40,7 @@ class ResourceStream
 
     public function read(int $length): string
     {
-        $result = fread(stream: $this->resource, length: $length);
+        $result = fread($this->resource, $length);
         if (false === $result) {
             throw new RuntimeException(error_get_last()['message']);
         }

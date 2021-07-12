@@ -12,12 +12,12 @@ use function igbinary_unserialize;
 
 class SerializerIgbinary implements SerializerInterface
 {
-    public function serialize(mixed $data): string
+    public function serialize($data): string
     {
         return igbinary_serialize($data);
     }
 
-    public function unserialize(string $data): mixed
+    public function unserialize(string $data)
     {
         return igbinary_unserialize($data);
     }

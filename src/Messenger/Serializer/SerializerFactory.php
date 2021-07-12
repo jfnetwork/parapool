@@ -6,8 +6,6 @@
 
 namespace Jfnetwork\Parapool\Messenger\Serializer;
 
-use function function_exists;
-
 class SerializerFactory
 {
     public static function createSerializer(): SerializerInterface

@@ -12,8 +12,11 @@ use Psr\Log\AbstractLogger;
 
 class SlaveLogger extends AbstractLogger
 {
-    public function __construct(private DuplexStreamMessenger $duplexStreamMessenger)
+    private DuplexStreamMessenger $duplexStreamMessenger;
+
+    public function __construct(DuplexStreamMessenger $duplexStreamMessenger)
     {
+        $this->duplexStreamMessenger = $duplexStreamMessenger;
     }
 
     public function log($level, $message, array $context = []): void

@@ -10,7 +10,7 @@ use Throwable;
 
 interface MessageWorkDoneInterface
 {
-    public function getResult(): mixed;
+    public function getResult();
 
     public function getThrowable(): ?Throwable;
 }

@@ -17,8 +17,11 @@ use function usleep;
 
 class ExampleCallable implements SlaveCallableInterface
 {
-    public function __construct(private SlaveLogger $logger)
+    private SlaveLogger $logger;
+
+    public function __construct(SlaveLogger $logger)
     {
+        $this->logger = $logger;
     }
 
     public function getName(): string

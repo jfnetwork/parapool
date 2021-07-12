@@ -8,8 +8,13 @@ namespace Jfnetwork\Parapool\Messenger\Message;
 
 class WorkMessage implements MessageInterface
 {
-    public function __construct(private string $method, private array $arguments)
+    private string $method;
+    private array $arguments;
+
+    public function __construct(string $method, array $arguments)
     {
+        $this->arguments = $arguments;
+        $this->method = $method;
     }
 
     public function getMethod(): string
