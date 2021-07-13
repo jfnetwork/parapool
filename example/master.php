@@ -9,15 +9,15 @@ use Jfnetwork\Parapool\WorkCallbackInterface;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$messageHandlerStorage = new MessageHandlerStorage(
+$msgHandlerStorage = new MessageHandlerStorage(
     new LogMessageHandler(new ExampleLogger()),
 );
 
-$pool = new Pool(__DIR__ . '/slave.php {workerId}', $messageHandlerStorage);
+$pool = new Pool(__DIR__ . '/slave.php {workerId}', $msgHandlerStorage);
 $pool->setWorkerCount(12);
 
 foreach (range(0, 100) as $i) {
-    $random_bytes = random_bytes(2 ** 20);
+    $random_bytes = random_bytes(1 << 20);
     $hash = hash('SHA512', $random_bytes);
     $pool->send(
         new class ($i, $hash) implements WorkCallbackInterface
@@ -34,7 +34,6 @@ foreach (range(0, 100) as $i) {
             public function onSuccess($result): void
             {
                 var_dump("{$this->num}^2 = {$result['num']}", $this->hash === $result['hash']);
-                return;
             }
 
             public function onException(Throwable $throwable = null): void
@@ -56,7 +55,7 @@ $pool->send(
 
         public function onException(Throwable $throwable = null): void
         {
-            throw $throwable;
+            var_dump($throwable);
         }
     },
     'testFailed'

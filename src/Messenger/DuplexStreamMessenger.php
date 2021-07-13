@@ -85,6 +85,7 @@ class DuplexStreamMessenger
             if (!$header) {
                 return null;
             }
+            $this->input->streamSetBlocking(true);
             ['length' => $length, 'more' => $more] = unpack(self::UNPACK, $header);
             $packet .= $this->input->read($length);
         } while ($more);

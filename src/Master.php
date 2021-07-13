@@ -6,14 +6,12 @@
 
 namespace Jfnetwork\Parapool;
 
-use Exception;
 use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
 use Jfnetwork\Parapool\Messenger\Message\MessageWorkDoneInterface;
 use Jfnetwork\Parapool\Messenger\Message\WorkMessage;
 use Jfnetwork\Parapool\Messenger\MessageHandler\MessageHandlerStorage;
 use Jfnetwork\Parapool\Messenger\ResourceStream;
 use Jfnetwork\Parapool\Messenger\Serializer\SerializerInterface;
-
 use RuntimeException;
 
 use function proc_get_status;
@@ -32,21 +30,21 @@ class Master
     /**
      * @var resource|null process resource
      */
-    private $resource = null;
+    private $resource;
     private DuplexStreamMessenger $messenger;
     private ?WorkCallbackInterface $callback = null;
     private int $workerId;
-    private MessageHandlerStorage $messageHandlerStorage;
+    private MessageHandlerStorage $msgHandlerStorage;
     private ?SerializerInterface $serializer;
 
     public function __construct(
         string $spawnCommand,
         int $workerId,
-        MessageHandlerStorage $messageHandlerStorage,
+        MessageHandlerStorage $msgHandlerStorage,
         ?SerializerInterface $serializer = null
     ) {
         $this->serializer = $serializer;
-        $this->messageHandlerStorage = $messageHandlerStorage;
+        $this->msgHandlerStorage = $msgHandlerStorage;
         $this->workerId = $workerId;
         $this->respawn($workerId, $spawnCommand);
     }
@@ -63,28 +61,6 @@ class Master
             usleep(10000);
         }
         proc_terminate($this->resource);
-    }
-
-    private function checkIfDone(): void
-    {
-        $message = $this->messenger->readUnblocking();
-        if (null === $message) {
-            return;
-        }
-        if ($message instanceof MessageWorkDoneInterface) {
-            if (empty($this->callback)) {
-                throw new RuntimeException('no callback O.o');
-            }
-            $callback = $this->callback;
-            $this->callback = null;
-            if (null !== $message->getThrowable()) {
-                $callback->onException($message->getThrowable());
-                return;
-            }
-            $callback->onSuccess($message->getResult());
-            return;
-        }
-        $this->messageHandlerStorage->handle($this->workerId, $message);
     }
 
     public function send(WorkCallbackInterface $callback, string $method, array $args = []): bool
@@ -122,5 +98,27 @@ class Master
         );
 
         return $pipes;
+    }
+
+    private function checkIfDone(): void
+    {
+        $message = $this->messenger->readUnblocking();
+        if (null === $message) {
+            return;
+        }
+        if ($message instanceof MessageWorkDoneInterface) {
+            if (empty($this->callback)) {
+                throw new RuntimeException("M{$this->workerId}: no callback O.o");
+            }
+            $callback = $this->callback;
+            $this->callback = null;
+            if (null !== $message->getThrowable()) {
+                $callback->onException($message->getThrowable());
+                return;
+            }
+            $callback->onSuccess($message->getResult());
+            return;
+        }
+        $this->msgHandlerStorage->handle($this->workerId, $message);
     }
 }

@@ -8,6 +8,7 @@ namespace Jfnetwork\Parapool;
 
 use InvalidArgumentException;
 use Jfnetwork\Parapool\Messenger\MessageHandler\MessageHandlerStorage;
+use Jfnetwork\Parapool\Messenger\Serializer\SerializerInterface;
 use LogicException;
 
 use function count;
@@ -21,12 +22,21 @@ class Pool
     private array $pool = [];
     private int $currentWorker = 0;
     private string $spawnCommand;
-    private MessageHandlerStorage $messageHandlerStorage;
+    private MessageHandlerStorage $msgHandlerStorage;
 
-    public function __construct(string $spawnCommand, MessageHandlerStorage $messageHandlerStorage)
-    {
-        $this->messageHandlerStorage = $messageHandlerStorage;
+    private ?SerializerInterface $serializer;
+
+    /**
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function __construct(
+        string $spawnCommand,
+        MessageHandlerStorage $msgHandlerStorage,
+        ?SerializerInterface $serializer = null
+    ) {
+        $this->msgHandlerStorage = $msgHandlerStorage;
         $this->spawnCommand = $spawnCommand;
+        $this->serializer = $serializer;
     }
 
     public function setWorkerCount(int $workerCount): void
@@ -36,7 +46,12 @@ class Pool
         }
 
         while ($workerCount > count($this->pool)) {
-            $this->pool[] = new Master($this->spawnCommand, count($this->pool), $this->messageHandlerStorage);
+            $this->pool[] = new Master(
+                $this->spawnCommand,
+                count($this->pool),
+                $this->msgHandlerStorage,
+                $this->serializer
+            );
         }
         while ($workerCount < count($this->pool)) {
             $this->pool[count($this->pool) - 1]->close();

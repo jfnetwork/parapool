@@ -6,8 +6,6 @@
 
 namespace Jfnetwork\Parapool;
 
-use Psr\Log\LoggerInterface;
-
 interface SlaveCallableInterface
 {
     public function getName(): string;
