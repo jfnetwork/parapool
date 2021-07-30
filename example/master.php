@@ -4,6 +4,7 @@
 use Example\ExampleLogger;
 use Jfnetwork\Parapool\Messenger\MessageHandler\LogMessageHandler;
 use Jfnetwork\Parapool\Messenger\MessageHandler\MessageHandlerStorage;
+use Jfnetwork\Parapool\NoopWorkCallback;
 use Jfnetwork\Parapool\Pool;
 use Jfnetwork\Parapool\WorkCallbackInterface;
 
@@ -36,15 +37,21 @@ foreach (range(0, 100) as $i) {
                 var_dump("{$this->num}^2 = {$result['num']}", $this->hash === $result['hash']);
             }
 
-            public function onException(Throwable $throwable = null): void
+            public function onException(?Throwable $throwable, string $message, string $class, string $trace): void
             {
-                var_dump($throwable);
+                var_dump($throwable, $message, $class, $trace);
             }
         },
         'test',
         ['num' => $i, 'much_data' => $random_bytes]
     );
 }
+$pool->waitUntilDone();
+$pool->send(
+    new NoopWorkCallback(),
+    'test',
+    ['throw_with_callable' => true]
+);
 $pool->send(
     new class () implements WorkCallbackInterface
     {
@@ -53,9 +60,9 @@ $pool->send(
             var_dump($result);
         }
 
-        public function onException(Throwable $throwable = null): void
+        public function onException(?Throwable $throwable, string $message, string $class, string $trace): void
         {
-            var_dump($throwable);
+            var_dump($throwable, $message, $class, $trace);
         }
     },
     'testFailed'

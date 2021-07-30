@@ -7,13 +7,20 @@
 namespace Example;
 
 use Exception;
-use InvalidArgumentException;
 use JetBrains\PhpStorm\ArrayShape;
 use Jfnetwork\Parapool\SlaveCallableInterface;
 use Jfnetwork\Parapool\SlaveLogger;
 
-use function hash;
-use function usleep;
+class TestException extends Exception
+{
+    public $callable;
+
+    public function __construct($message = '')
+    {
+        $this->callable = static fn() => 1;
+        parent::__construct($message);
+    }
+}
 
 class ExampleCallable implements SlaveCallableInterface
 {
@@ -33,8 +40,11 @@ class ExampleCallable implements SlaveCallableInterface
      * @throws Exception
      */
     #[ArrayShape(['num' => "int|mixed", 'hash' => "string"])]
-    public function execute(array $args): array
+    public function execute(array $args)
     {
+        if (!empty($args['throw_with_callable'])) {
+            throw new TestException('callable!');
+        }
         $this->logger->critical('got {number}', [
             'number' => $args['num'],
         ]);

@@ -7,8 +7,9 @@
 namespace Jfnetwork\Parapool;
 
 use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
-use Jfnetwork\Parapool\Messenger\Message\MessageWorkDoneInterface;
+use Jfnetwork\Parapool\Messenger\Message\ThrowableMessage;
 use Jfnetwork\Parapool\Messenger\Message\WorkMessage;
+use Jfnetwork\Parapool\Messenger\Message\WorkResultMessage;
 use Jfnetwork\Parapool\Messenger\MessageHandler\MessageHandlerStorage;
 use Jfnetwork\Parapool\Messenger\ResourceStream;
 use Jfnetwork\Parapool\Messenger\Serializer\SerializerInterface;
@@ -106,19 +107,29 @@ class Master
         if (null === $message) {
             return;
         }
-        if ($message instanceof MessageWorkDoneInterface) {
-            if (empty($this->callback)) {
-                throw new RuntimeException("M{$this->workerId}: no callback O.o");
-            }
-            $callback = $this->callback;
-            $this->callback = null;
-            if (null !== $message->getThrowable()) {
-                $callback->onException($message->getThrowable());
-                return;
-            }
-            $callback->onSuccess($message->getResult());
+        if ($message instanceof WorkResultMessage) {
+            $this->getAndUnsetCallback()->onSuccess($message->getResult());
+            return;
+        }
+        if ($message instanceof ThrowableMessage) {
+            $this->getAndUnsetCallback()->onException(
+                $message->getThrowable(),
+                $message->getMessage(),
+                $message->getClass(),
+                $message->getTrace()
+            );
             return;
         }
         $this->msgHandlerStorage->handle($this->workerId, $message);
+    }
+
+    private function getAndUnsetCallback(): WorkCallbackInterface
+    {
+        if (empty($this->callback)) {
+            throw new RuntimeException("M{$this->workerId}: no callback O.o");
+        }
+        $callback = $this->callback;
+        $this->callback = null;
+        return $callback;
     }
 }

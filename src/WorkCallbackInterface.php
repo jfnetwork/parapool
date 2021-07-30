@@ -11,5 +11,5 @@ use Throwable;
 interface WorkCallbackInterface
 {
     public function onSuccess($result): void;
-    public function onException(Throwable $throwable = null): void;
+    public function onException(?Throwable $throwable, string $message, string $class, string $trace): void;
 }
