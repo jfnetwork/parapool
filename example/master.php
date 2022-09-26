@@ -15,7 +15,7 @@ $msgHandlerStorage = new MessageHandlerStorage(
 );
 
 $pool = new Pool(__DIR__ . '/slave.php {workerId}', $msgHandlerStorage);
-$pool->setWorkerCount(12);
+$pool->setWorkerCount(4);
 
 foreach (range(0, 100) as $i) {
     $random_bytes = random_bytes(1 << 20);
@@ -39,7 +39,7 @@ foreach (range(0, 100) as $i) {
 
             public function onException(?Throwable $throwable, string $message, string $class, string $trace): void
             {
-                var_dump($throwable, $message, $class, $trace);
+                var_dump($this->num, $throwable, $message, $class, $trace);
             }
         },
         'test',

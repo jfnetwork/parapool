@@ -6,6 +6,7 @@
 
 namespace Jfnetwork\Parapool;
 
+use Jfnetwork\Parapool\Exception\ProcessDiedException;
 use Jfnetwork\Parapool\Messenger\DuplexStreamMessenger;
 use Jfnetwork\Parapool\Messenger\Message\ThrowableMessage;
 use Jfnetwork\Parapool\Messenger\Message\WorkMessage;
@@ -15,19 +16,18 @@ use Jfnetwork\Parapool\Messenger\ResourceStream;
 use Jfnetwork\Parapool\Messenger\Serializer\SerializerInterface;
 use RuntimeException;
 
+use function file_exists;
+use function file_get_contents;
+use function getmypid;
 use function proc_get_status;
 use function proc_open;
 use function proc_terminate;
 use function str_replace;
+use function unlink;
 use function usleep;
 
 class Master
 {
-    private const PIPES = [
-        ['pipe', 'r'],
-        ['pipe', 'w'],
-    ];
-
     /**
      * @var resource|null process resource
      */
@@ -37,6 +37,9 @@ class Master
     private int $workerId;
     private MessageHandlerStorage $msgHandlerStorage;
     private ?SerializerInterface $serializer;
+    private ?ResourceStream $errorStream = null;
+    private ?string $errorFile = null;
+    private string $spawnCommand;
 
     public function __construct(
         string $spawnCommand,
@@ -47,7 +50,8 @@ class Master
         $this->serializer = $serializer;
         $this->msgHandlerStorage = $msgHandlerStorage;
         $this->workerId = $workerId;
-        $this->respawn($workerId, $spawnCommand);
+        $this->spawnCommand = $spawnCommand;
+        $this->respawn();
     }
 
     public function __destruct()
@@ -62,6 +66,9 @@ class Master
             usleep(10000);
         }
         proc_terminate($this->resource);
+        if (null !== $this->errorFile && file_exists($this->errorFile)) {
+            @unlink($this->errorFile);
+        }
     }
 
     public function send(WorkCallbackInterface $callback, string $method, array $args = []): bool
@@ -82,14 +89,20 @@ class Master
         return null !== $this->callback;
     }
 
-    public function respawn(int $workerId, string $spawnCommand)
+    public function respawn()
     {
         if (null !== $this->resource && proc_get_status($this->resource)['running']) {
             proc_terminate($this->resource);
         }
+        $pid = getmypid();
+        $this->errorFile = "/tmp/parapool.error.$pid.{$this->workerId}.log";
         $this->resource = proc_open(
-            str_replace('{workerId}', $workerId, $spawnCommand),
-            self::PIPES,
+            str_replace('{workerId}', $this->workerId, $this->spawnCommand),
+            [
+                ['pipe', 'r'],
+                ['pipe', 'w'],
+                ['file', $this->errorFile, "w"],
+            ],
             $pipes
         );
         $this->messenger = new DuplexStreamMessenger(
@@ -97,12 +110,27 @@ class Master
             new ResourceStream($pipes[0]),
             $this->serializer,
         );
+        // $this->errorStream = new ResourceStream($pipes[2]);
 
         return $pipes;
     }
 
     private function checkIfDone(): void
     {
+        $status = proc_get_status($this->resource);
+        if (!$status['running']) {
+            // $this->errorStream->streamSetBlocking(true);
+            // $error = $this->errorStream->read(1 << 20);
+            $error = file_get_contents($this->errorFile);
+            $exception = new ProcessDiedException($error, 0);
+            $this->getAndUnsetCallback()->onException(
+                $exception,
+                $error,
+                ProcessDiedException::class,
+                $exception->getTraceAsString()
+            );
+            $this->respawn();
+        }
         $message = $this->messenger->readUnblocking();
         if (null === $message) {
             return;

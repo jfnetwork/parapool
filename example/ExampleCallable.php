@@ -7,9 +7,14 @@
 namespace Example;
 
 use Exception;
+use InvalidArgumentException;
 use JetBrains\PhpStorm\ArrayShape;
 use Jfnetwork\Parapool\SlaveCallableInterface;
 use Jfnetwork\Parapool\SlaveLogger;
+
+use function array_sum;
+use function ini_set;
+use function memory_get_peak_usage;
 
 class TestException extends Exception
 {
@@ -50,6 +55,11 @@ class ExampleCallable implements SlaveCallableInterface
         ]);
         if (13 === $args['num']) {
             throw new InvalidArgumentException('oh no, 13!');
+        }
+        if (69 === $args['num']) {
+            ini_set('memory_limit', memory_get_peak_usage() + 2000000);
+            $arr = range(0, 1000000);
+            return  ['num' => array_sum($arr), 'hash' => 'foo'];
         }
 
         $result = $args['num'] ** 2;
