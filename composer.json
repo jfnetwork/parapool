@@ -5,7 +5,7 @@
     "description": "A library for parallel execution",
     "require": {
         "php": "7.4.*|^8.0",
-        "psr/log": "^1.0"
+        "psr/log": "*"
     },
     "autoload": {
         "psr-4": {
